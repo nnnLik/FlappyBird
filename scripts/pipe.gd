@@ -16,6 +16,8 @@ const SINGLE_PIPE_MIN_LENGTH: int = 120
 
 const CAP_HEIGHT: int = 26
 const BODY_TILE_HEIGHT: int = 26
+# Линия щели / геймплея (совпадает с bird.FLOOR_Y)
+const PLAYFIELD_FLOOR_Y: float = 468.0
 
 @onready var top_column: Node2D = $TopColumn
 @onready var bottom_column: Node2D = $BottomColumn
@@ -38,8 +40,11 @@ func get_damage_rects_global() -> Array[Rect2]:
 			continue
 		for child in column.get_children():
 			if child is Sprite2D:
-				rects.append((child as Sprite2D).get_global_rect())
+				rects.append(__sprite_global_rect(child as Sprite2D))
 	return rects
+
+func __sprite_global_rect(sprite: Sprite2D) -> Rect2:
+	return sprite.global_transform * sprite.get_rect()
 
 func __place_at_spawn_if_needed() -> void:
 	if not is_zero_approx(position.x):
@@ -57,40 +62,45 @@ func __pick_type() -> PipeType:
 			return PipeType.BOTTOM
 
 func __random_gap_center() -> float:
-	var vh := get_viewport_rect().size.y
 	var half_gap := GAP_SIZE * 0.5
 
 	match pipe_type:
 		PipeType.BOTH:
 			return randf_range(
 				half_gap + GAP_CENTER_MARGIN,
-				vh - half_gap - GAP_CENTER_MARGIN
+				PLAYFIELD_FLOOR_Y - half_gap - GAP_CENTER_MARGIN
 			)
 		PipeType.TOP:
 			return randf_range(
 				float(SINGLE_PIPE_MIN_LENGTH),
-				vh - GAP_CENTER_MARGIN
+				PLAYFIELD_FLOOR_Y - GAP_CENTER_MARGIN
 			)
 		PipeType.BOTTOM:
 			return randf_range(
 				GAP_CENTER_MARGIN,
-				vh - SINGLE_PIPE_MIN_LENGTH
+				PLAYFIELD_FLOOR_Y - SINGLE_PIPE_MIN_LENGTH
 			)
 		_:
-			return vh * 0.5
+			return PLAYFIELD_FLOOR_Y * 0.5
+
+func __pipe_visual_bottom_y() -> float:
+	return get_viewport_rect().size.y
 
 func __setup_pipes() -> void:
 	top_column.visible = false
 	bottom_column.visible = false
-
-	var vh := get_viewport_rect().size.y
 
 	match pipe_type:
 		PipeType.BOTH:
 			top_column.visible = true
 			bottom_column.visible = true
 			__build_column(top_column, 0.0, gap_center_y - GAP_SIZE * 0.5, true)
-			__build_column(bottom_column, gap_center_y + GAP_SIZE * 0.5, vh, false)
+			__build_column(
+				bottom_column,
+				gap_center_y + GAP_SIZE * 0.5,
+				__pipe_visual_bottom_y(),
+				false
+			)
 
 		PipeType.TOP:
 			top_column.visible = true
@@ -98,7 +108,7 @@ func __setup_pipes() -> void:
 
 		PipeType.BOTTOM:
 			bottom_column.visible = true
-			__build_column(bottom_column, gap_center_y, vh, false)
+			__build_column(bottom_column, gap_center_y, __pipe_visual_bottom_y(), false)
 
 func __clear_column(column: Node2D) -> void:
 	for child in column.get_children():

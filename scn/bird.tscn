@@ -3,19 +3,8 @@
 [ext_resource type="Texture2D" uid="uid://d2ibk2ppajt8c" path="res://assets/Game Objects/yellowbird-midflap.png" id="1_jr6ws"]
 [ext_resource type="Script" uid="uid://cu71dinu03qdj" path="res://scripts/bird.gd" id="2_b4e4p"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_bird"]
-radius = 12.0
-
 [node name="Bird" type="Node2D" unique_id=1904877381]
 script = ExtResource("2_b4e4p")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=2092969351]
 texture = ExtResource("1_jr6ws")
-
-[node name="Hitbox" type="Area2D" parent="." unique_id=8844226610]
-collision_layer = 1
-collision_mask = 2
-monitoring = true
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=8844226611]
-shape = SubResource("CircleShape2D_bird")
