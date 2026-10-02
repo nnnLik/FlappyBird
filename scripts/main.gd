@@ -18,6 +18,7 @@ const SFX_SWOOSH: AudioStream = preload("res://assets/Sound Efects/swoosh.wav")
 
 var _state: GameState = GameState.READY
 var _spawn_timer: float = 0.0
+var _score: int = 0
 
 func _ready() -> void:
 	_spawn_timer = SPAWN_INTERVAL * 0.5
@@ -62,8 +63,11 @@ func _on_bird_died(ground_hit: bool) -> void:
 	__stop_gameplay()
 
 func _on_pipe_scored() -> void:
-	if _state == GameState.PLAYING:
-		__play_sfx(SFX_POINT)
+	if _state != GameState.PLAYING:
+		return
+	_score += 1
+	game_ui.set_score(_score)
+	__play_sfx(SFX_POINT)
 
 func __spawn_pipe() -> void:
 	var pipe: Node2D = PIPE_SCENE.instantiate()
@@ -80,6 +84,7 @@ func __reset_to_initial() -> void:
 		child.queue_free()
 	bird.reset_to_ready()
 	bird.set_process(true)
+	_score = 0
 	_state = GameState.READY
 	_spawn_timer = SPAWN_INTERVAL * 0.5
 	game_ui.show_ready()

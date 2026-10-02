@@ -4,8 +4,9 @@ signal scored
 
 enum PipeType { BOTH, TOP, BOTTOM }
 
-const PIPE_SPEED: int = 100
+const PIPE_TEXTURE: Texture2D = preload("res://assets/Game Objects/pipe-green.png")
 
+const PIPE_SPEED: int = 100
 const GAP_SIZE: int = 150
 const PIPE_WIDTH: int = 52
 const DESPAWN_MARGIN: int = 20
@@ -13,22 +14,32 @@ const DESPAWN_MARGIN: int = 20
 const GAP_CENTER_MARGIN: int = 80
 const SINGLE_PIPE_MIN_LENGTH: int = 120
 
-@onready var top_pipe: Sprite2D = $TopPipeSprite
-@onready var bottom_pipe: Sprite2D = $BottomPipeSprite
-@onready var top_hitbox: Area2D = $TopHitbox
-@onready var bottom_hitbox: Area2D = $BottomHitbox
+const CAP_HEIGHT: int = 26
+const BODY_TILE_HEIGHT: int = 26
+
+@onready var top_column: Node2D = $TopColumn
+@onready var bottom_column: Node2D = $BottomColumn
 
 var gap_center_y: float = 0.0
 var pipe_type: PipeType = PipeType.BOTH
 var _scored: bool = false
 
 func _ready() -> void:
-	top_hitbox.add_to_group("pipe_hitbox")
-	bottom_hitbox.add_to_group("pipe_hitbox")
+	add_to_group("pipes")
 	pipe_type = __pick_type()
 	gap_center_y = __random_gap_center()
 	__setup_pipes()
 	__place_at_spawn_if_needed()
+
+func get_damage_rects_global() -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	for column in [top_column, bottom_column]:
+		if not column.visible:
+			continue
+		for child in column.get_children():
+			if child is Sprite2D:
+				rects.append((child as Sprite2D).get_global_rect())
+	return rects
 
 func __place_at_spawn_if_needed() -> void:
 	if not is_zero_approx(position.x):
@@ -69,59 +80,83 @@ func __random_gap_center() -> float:
 			return vh * 0.5
 
 func __setup_pipes() -> void:
-	top_pipe.visible = false
-	bottom_pipe.visible = false
-	top_hitbox.monitorable = false
-	bottom_hitbox.monitorable = false
+	top_column.visible = false
+	bottom_column.visible = false
 
 	var vh := get_viewport_rect().size.y
 
 	match pipe_type:
 		PipeType.BOTH:
-			top_pipe.visible = true
-			bottom_pipe.visible = true
-			_fit_pipe(top_pipe, top_hitbox, 0.0, gap_center_y - GAP_SIZE * 0.5, true)
-			_fit_pipe(bottom_pipe, bottom_hitbox, gap_center_y + GAP_SIZE * 0.5, vh, false)
+			top_column.visible = true
+			bottom_column.visible = true
+			__build_column(top_column, 0.0, gap_center_y - GAP_SIZE * 0.5, true)
+			__build_column(bottom_column, gap_center_y + GAP_SIZE * 0.5, vh, false)
 
 		PipeType.TOP:
-			top_pipe.visible = true
-			_fit_pipe(top_pipe, top_hitbox, 0.0, gap_center_y, true)
+			top_column.visible = true
+			__build_column(top_column, 0.0, gap_center_y, true)
 
 		PipeType.BOTTOM:
-			bottom_pipe.visible = true
-			_fit_pipe(bottom_pipe, bottom_hitbox, gap_center_y, vh, false)
+			bottom_column.visible = true
+			__build_column(bottom_column, gap_center_y, vh, false)
 
-func _fit_pipe(
-	pipe: Sprite2D,
-	hitbox: Area2D,
+func __clear_column(column: Node2D) -> void:
+	for child in column.get_children():
+		column.remove_child(child)
+		child.free()
+
+func __build_column(
+	column: Node2D,
 	top_y: float,
 	bottom_y: float,
-	hangs_from_ceiling: bool
+	cap_at_bottom: bool
 ) -> void:
-	var h := maxf(bottom_y - top_y, 1.0)
-	var tex_h := float(pipe.texture.get_height())
-	var scale_y := h / tex_h
+	__clear_column(column)
 
-	pipe.flip_v = false
-	pipe.scale = Vector2(1.0, -scale_y if hangs_from_ceiling else scale_y)
-	pipe.position = Vector2(0.0, top_y + h * 0.5)
+	var segment_h := maxf(bottom_y - top_y, float(CAP_HEIGHT))
+	var body_h := maxf(segment_h - float(CAP_HEIGHT), 0.0)
 
-	hitbox.position = pipe.position
-	hitbox.monitorable = true
-	var shape_node := hitbox.get_node("CollisionShape2D") as CollisionShape2D
-	var rect := shape_node.shape as RectangleShape2D
-	if rect == null:
-		rect = RectangleShape2D.new()
-		shape_node.shape = rect
-	rect.size = Vector2(PIPE_WIDTH, h)
+	if cap_at_bottom:
+		__fill_body_tiles(column, top_y, body_h)
+		__add_cap_sprite(column, bottom_y - float(CAP_HEIGHT) * 0.5, true)
+	else:
+		__add_cap_sprite(column, top_y + float(CAP_HEIGHT) * 0.5, false)
+		__fill_body_tiles(column, top_y + float(CAP_HEIGHT), body_h)
+
+func __add_cap_sprite(column: Node2D, center_y: float, flip_cap: bool) -> void:
+	var cap := Sprite2D.new()
+	cap.texture = PIPE_TEXTURE
+	cap.region_enabled = true
+	cap.region_rect = Rect2(0.0, 0.0, float(PIPE_WIDTH), float(CAP_HEIGHT))
+	cap.centered = true
+	cap.flip_v = flip_cap
+	cap.position = Vector2(0.0, center_y)
+	column.add_child(cap)
+
+func __fill_body_tiles(column: Node2D, start_y: float, height: float) -> void:
+	if height <= 0.0:
+		return
+
+	var y := start_y
+	var remaining := height
+	var tex_h := PIPE_TEXTURE.get_height()
+	var body_source_h := maxf(float(tex_h - CAP_HEIGHT), float(BODY_TILE_HEIGHT))
+
+	while remaining > 0.0:
+		var tile_h := minf(float(BODY_TILE_HEIGHT), remaining)
+		var src_h := minf(body_source_h, tile_h)
+		var body := Sprite2D.new()
+		body.texture = PIPE_TEXTURE
+		body.region_enabled = true
+		body.region_rect = Rect2(0.0, float(CAP_HEIGHT), float(PIPE_WIDTH), src_h)
+		body.centered = true
+		body.position = Vector2(0.0, y + tile_h * 0.5)
+		column.add_child(body)
+		y += tile_h
+		remaining -= tile_h
 
 func _visual_right_edge_x() -> float:
-	var half_w := PIPE_WIDTH * 0.5
-	var edge := position.x - half_w
-	for pipe in [top_pipe, bottom_pipe]:
-		if pipe.visible:
-			edge = maxf(edge, position.x + pipe.position.x + half_w)
-	return edge
+	return position.x + PIPE_WIDTH * 0.5
 
 func __try_score() -> void:
 	if _scored:

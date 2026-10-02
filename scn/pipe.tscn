@@ -1,34 +1,10 @@
 [gd_scene format=3 uid="uid://ctwi628r7e2fa"]
 
-[ext_resource type="Texture2D" uid="uid://cf6g780pgkl4b" path="res://assets/Game Objects/pipe-green.png" id="1_ukk0u"]
 [ext_resource type="Script" uid="uid://de6a72e8epeh1" path="res://scripts/pipe.gd" id="2_tu0y3"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_pipe"]
-size = Vector2(52, 100)
 
 [node name="Pipe" type="Node2D" unique_id=1797446706]
 script = ExtResource("2_tu0y3")
 
-[node name="TopPipeSprite" type="Sprite2D" parent="." unique_id=1971448596]
-texture = ExtResource("1_ukk0u")
+[node name="TopColumn" type="Node2D" parent="." unique_id=8811002201]
 
-[node name="BottomPipeSprite" type="Sprite2D" parent="." unique_id=127639310]
-texture = ExtResource("1_ukk0u")
-
-[node name="TopHitbox" type="Area2D" parent="." unique_id=7711223301]
-collision_layer = 2
-collision_mask = 0
-monitorable = true
-monitoring = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TopHitbox" unique_id=7711223302]
-shape = SubResource("RectangleShape2D_pipe")
-
-[node name="BottomHitbox" type="Area2D" parent="." unique_id=7711223303]
-collision_layer = 2
-collision_mask = 0
-monitorable = true
-monitoring = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="BottomHitbox" unique_id=7711223304]
-shape = SubResource("RectangleShape2D_pipe")
+[node name="BottomColumn" type="Node2D" parent="." unique_id=8811002202]

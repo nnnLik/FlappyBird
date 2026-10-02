@@ -9,7 +9,10 @@ const ROTATION_LERP_SPEED: float = 10.0
 
 const FLAP_VELOCITY_THRESHOLD: float = 50.0
 const START_POSITION_DIVISOR: float = 4.0
-const GROUND_MARGIN: float = 4.0
+
+const HIT_RADIUS: float = 8.0
+const CEILING_Y: float = 8.0
+const FLOOR_Y: float = 468.0
 
 const DOWNFLAP_FRAME: Texture2D = preload("res://assets/Game Objects/yellowbird-downflap.png")
 const MIDFLAP_FRAME: Texture2D = preload("res://assets/Game Objects/yellowbird-midflap.png")
@@ -25,12 +28,10 @@ signal died(ground_hit: bool)
 var is_dead: bool = false
 
 @onready var _sprite: Sprite2D = $Sprite2D
-@onready var _hitbox: Area2D = $Hitbox
 
 func _ready() -> void:
 	add_to_group("bird")
 	reset_to_ready()
-	_hitbox.area_entered.connect(_on_hitbox_area_entered)
 
 func reset_to_ready() -> void:
 	is_dead = false
@@ -70,15 +71,9 @@ func _handle_rotation(delta: float) -> void:
 	)
 
 func _check_bounds() -> void:
-	var vh := get_viewport_rect().size.y
-	if global_position.y <= GROUND_MARGIN or global_position.y >= vh - GROUND_MARGIN:
+	var center := _sprite.global_position
+	if center.y <= CEILING_Y or center.y >= FLOOR_Y:
 		__die(true)
-
-func _on_hitbox_area_entered(area: Area2D) -> void:
-	if is_dead or not is_started:
-		return
-	if area.is_in_group("pipe_hitbox"):
-		__die(false)
 
 func __die(ground_hit: bool) -> void:
 	if is_dead:
@@ -108,7 +103,19 @@ func _process(delta: float) -> void:
 	_check_bounds()
 
 func _check_pipe_collision() -> void:
-	for area in _hitbox.get_overlapping_areas():
-		if area.is_in_group("pipe_hitbox"):
-			__die(false)
-			return
+	var center := _sprite.global_position
+
+	for pipe in get_tree().get_nodes_in_group("pipes"):
+		if not pipe.is_processing():
+			continue
+		for rect in pipe.get_damage_rects_global():
+			if __circle_intersects_rect(center, HIT_RADIUS, rect):
+				__die(false)
+				return
+
+func __circle_intersects_rect(center: Vector2, radius: float, rect: Rect2) -> bool:
+	var closest := Vector2(
+		clampf(center.x, rect.position.x, rect.end.x),
+		clampf(center.y, rect.position.y, rect.end.y)
+	)
+	return center.distance_squared_to(closest) <= radius * radius

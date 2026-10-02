@@ -14,3 +14,6 @@ texture = ExtResource("1_msg")
 [node name="GameOver" type="Sprite2D" parent="."]
 visible = false
 texture = ExtResource("2_go")
+
+[node name="Score" type="Node2D" parent="."]
+visible = false
