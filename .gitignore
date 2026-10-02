@@ -1,3 +1,27 @@
-# Godot 4+ specific ignores
+# Godot
 .godot/
-/android/
+.import/
+
+# Экспорт
+export/
+export_presets.cfg
+
+# Системное
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Временные файлы редактора Godot
+*.tmp
+*.bak
+
+# Mono / C#
+.mono/
+data_*/
+mono_crash.*
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
