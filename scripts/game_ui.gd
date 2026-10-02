@@ -39,12 +39,12 @@ func show_game_over() -> void:
 	_message.visible = false
 	_game_over.visible = true
 
-func set_score(value: int, visible: bool = true) -> void:
+func set_score(value: int, show_score: bool = true) -> void:
 	for child in _score_root.get_children():
 		child.queue_free()
 
-	_score_root.visible = visible
-	if not visible:
+	_score_root.visible = show_score
+	if not show_score:
 		return
 
 	var text := str(maxi(value, 0))
