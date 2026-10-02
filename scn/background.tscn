@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cyx8jvhghxg01"]
+
+[ext_resource type="Texture2D" uid="uid://bg1jayys0v004" path="res://assets/Game Objects/background-day.png" id="1_ori7i"]
+[ext_resource type="Script" uid="uid://c0awujncrq5pw" path="res://scripts/background.gd" id="2_nj25y"]
+
+[node name="Background" type="Node2D" unique_id=164001337]
+
+[node name="BackgroundDay" type="Sprite2D" parent="." unique_id=2070052683]
+position = Vector2(-5, 70)
+texture = ExtResource("1_ori7i")
+script = ExtResource("2_nj25y")

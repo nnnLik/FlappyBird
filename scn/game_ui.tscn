@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://nu7aah886kk1"]
+
+[ext_resource type="Texture2D" uid="uid://d31fkghanx5sf" path="res://assets/UI/message.png" id="1_msg"]
+[ext_resource type="Texture2D" uid="uid://dldublni3so42" path="res://assets/UI/gameover.png" id="2_go"]
+[ext_resource type="Script" path="res://scripts/game_ui.gd" id="3_ui"]
+
+[node name="GameUI" type="CanvasLayer"]
+layer = 10
+script = ExtResource("3_ui")
+
+[node name="Message" type="Sprite2D" parent="."]
+texture = ExtResource("1_msg")
+
+[node name="GameOver" type="Sprite2D" parent="."]
+visible = false
+texture = ExtResource("2_go")
